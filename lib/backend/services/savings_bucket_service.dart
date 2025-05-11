@@ -77,9 +77,7 @@ class SavingsBucketService extends BaseService<SavingsBucket> {
 
   // Get AI recommendations for savings
   Future<Map<String, dynamic>> getSavingsRecommendations(String userId) async {
-    final stats = await getSavingsStats(userId);
     final buckets = await query(field: 'userId', isEqualTo: userId);
-    
     // Calculate monthly savings rate
     final now = DateTime.now();
     final firstDayOfMonth = DateTime(now.year, now.month, 1);

@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-import 'package:mintmate/backend/services/auth_service.dart';
-import 'package:mintmate/backend/services/ai_service.dart';
-import 'package:fl_chart/fl_chart.dart';
 
 class ExpenseHeatmapScreen extends StatefulWidget {
   const ExpenseHeatmapScreen({super.key});
@@ -16,7 +12,6 @@ class _ExpenseHeatmapScreenState extends State<ExpenseHeatmapScreen> {
   bool _isLoading = false;
   Map<String, double> _categorySpending = {};
   List<Map<String, dynamic>> _aiInsights = [];
-  String _selectedTimeFrame = 'Monthly';
 
   @override
   void initState() {

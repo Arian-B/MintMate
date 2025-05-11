@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'funds_manager_screen.dart';
 import 'bill_tracker_screen.dart';
 import 'budget_builder_screen.dart';
 import 'bill_splitter_screen.dart';

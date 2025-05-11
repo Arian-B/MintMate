@@ -53,9 +53,6 @@ class AIService extends BaseService {
   }
 
   Future<Map<String, double>> getBudgetRecommendations(List<Map<String, dynamic>> expenses) async {
-    // Calculate total spending
-    final totalSpent = expenses.fold(0.0, (sum, e) => sum + (e['amount'] as double));
-    
     // Group expenses by category
     final Map<String, double> categoryTotals = {};
     for (var expense in expenses) {
@@ -68,7 +65,6 @@ class AIService extends BaseService {
     for (var entry in categoryTotals.entries) {
       final category = entry.key;
       final spent = entry.value;
-      final percentage = spent / totalSpent;
       
       // Adjust budget based on category importance and spending patterns
       double recommendedBudget;

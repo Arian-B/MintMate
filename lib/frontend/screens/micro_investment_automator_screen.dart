@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-import 'package:mintmate/backend/services/auth_service.dart';
-import 'package:mintmate/backend/services/ai_service.dart';
 
 class MicroInvestmentAutomatorScreen extends StatefulWidget {
   const MicroInvestmentAutomatorScreen({super.key});
@@ -15,7 +12,6 @@ class _MicroInvestmentAutomatorScreenState extends State<MicroInvestmentAutomato
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   String _selectedRiskProfile = 'Moderate';
-  double _investmentAmount = 0;
   List<Map<String, dynamic>> _aiRecommendations = [];
   bool _isLoading = false;
 
@@ -106,7 +102,6 @@ class _MicroInvestmentAutomatorScreenState extends State<MicroInvestmentAutomato
                     ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState?.validate() ?? false) {
-                          _investmentAmount = double.parse(_amountController.text);
                           // TODO: Save investment to backend
                         }
                       },

@@ -2,10 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:mintmate/backend/services/auth_service.dart';
-import 'package:mintmate/backend/services/ai_service.dart';
-import 'package:mintmate/backend/services/expense_service.dart';
-import 'package:mintmate/backend/services/savings_service.dart';
-import 'package:mintmate/backend/models/expense.dart';
 import 'package:mintmate/backend/models/savings_bucket.dart';
 import 'package:mintmate/backend/services/savings_bucket_service.dart';
 
@@ -17,8 +13,6 @@ class FundsManagerScreen extends StatefulWidget {
 }
 
 class _FundsManagerScreenState extends State<FundsManagerScreen> {
-  final AIService _aiService = AIService();
-  final ExpenseService _expenseService = ExpenseService();
   final SavingsBucketService _savingsService = SavingsBucketService();
   Map<String, double> _savingsBuckets = {};
   Map<String, dynamic> _recommendations = {};

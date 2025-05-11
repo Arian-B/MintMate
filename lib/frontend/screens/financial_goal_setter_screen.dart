@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-import 'package:mintmate/backend/services/auth_service.dart';
-import 'package:mintmate/backend/services/ai_service.dart';
 
 class FinancialGoalSetterScreen extends StatefulWidget {
   const FinancialGoalSetterScreen({super.key});
@@ -17,8 +14,6 @@ class _FinancialGoalSetterScreenState extends State<FinancialGoalSetterScreen> {
   final _targetAmountController = TextEditingController();
   final _currentAmountController = TextEditingController();
   String _selectedGoalType = 'Short-term';
-  double _targetAmount = 0;
-  double _currentAmount = 0;
   List<Map<String, dynamic>> _aiRecommendations = [];
   bool _isLoading = false;
 
@@ -117,8 +112,6 @@ class _FinancialGoalSetterScreenState extends State<FinancialGoalSetterScreen> {
                     ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState?.validate() ?? false) {
-                          _targetAmount = double.parse(_targetAmountController.text);
-                          _currentAmount = double.parse(_currentAmountController.text);
                           // TODO: Save goal to backend
                         }
                       },
