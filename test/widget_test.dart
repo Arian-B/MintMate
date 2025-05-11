@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mintmate/main.dart';
+import '../lib/main.dart';
 
 void main() {
   testWidgets('Splash Screen navigates to Login Screen',
       (WidgetTester tester) async {
     // Build the app and trigger a frame.
-    await tester.pumpWidget(MintMateApp());
+    await tester.pumpWidget(const MyApp());
 
     // Verify that the Splash Screen is shown.
     expect(find.text('MintMate'), findsOneWidget);

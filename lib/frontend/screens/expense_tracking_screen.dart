@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import '../models/expense.dart';
-import '../services/ai_service.dart';
+import '../../backend/models/expense.dart';
+import '../../backend/services/ai_service.dart';
 
 class ExpenseTrackingScreen extends StatefulWidget {
-  const ExpenseTrackingScreen({super.key});
-
   @override
-  State<ExpenseTrackingScreen> createState() => _ExpenseTrackingScreenState();
+  _ExpenseTrackingScreenState createState() => _ExpenseTrackingScreenState();
 }
 
 class _ExpenseTrackingScreenState extends State<ExpenseTrackingScreen> {
@@ -20,16 +18,16 @@ class _ExpenseTrackingScreenState extends State<ExpenseTrackingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MintMate - Expense Tracker'),
+        title: Text('MintMate - Expense Tracker'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.analytics),
+            icon: Icon(Icons.analytics),
             onPressed: _showAnalytics,
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : Column(
               children: [
                 _buildExpenseChart(),
@@ -40,7 +38,7 @@ class _ExpenseTrackingScreenState extends State<ExpenseTrackingScreen> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addExpense,
-        child: const Icon(Icons.add),
+        child: Icon(Icons.add),
       ),
     );
   }
@@ -48,7 +46,7 @@ class _ExpenseTrackingScreenState extends State<ExpenseTrackingScreen> {
   Widget _buildExpenseChart() {
     return Container(
       height: 200,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       child: PieChart(
         PieChartData(
           sections: _getChartSections(),
@@ -70,7 +68,7 @@ class _ExpenseTrackingScreenState extends State<ExpenseTrackingScreen> {
         final expense = _expenses[index];
         return Slidable(
           endActionPane: ActionPane(
-            motion: ScrollMotion(),
+            motion: const ScrollMotion(),
             children: [
               SlidableAction(
                 onPressed: (_) => _deleteExpense(expense),
@@ -86,7 +84,7 @@ class _ExpenseTrackingScreenState extends State<ExpenseTrackingScreen> {
             subtitle: Text(expense.category),
             trailing: Text(
               '\$${expense.amount.toStringAsFixed(2)}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.green,
               ),
@@ -100,14 +98,14 @@ class _ExpenseTrackingScreenState extends State<ExpenseTrackingScreen> {
   Future<void> _addExpense() async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) => const AddExpenseDialog(),
+      builder: (context) => AddExpenseDialog(),
     );
 
     if (result != null) {
       setState(() {
         _expenses.add(Expense(
           amount: result['amount'],
-          category: _aiService.categorizeExpense(result['description'], result['amount']),
+          category: result['category'],
           date: DateTime.now(),
           description: result['description'],
         ));
@@ -122,45 +120,13 @@ class _ExpenseTrackingScreenState extends State<ExpenseTrackingScreen> {
   }
 
   void _showAnalytics() {
-    final analysis = _aiService.analyzeSpendingPatterns(
-      _expenses.map((e) => {
-        'amount': e.amount,
-        'category': e.category,
-      }).toList(),
-    );
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Spending Analysis'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Total Spending: \$${analysis['totalSpending'].toStringAsFixed(2)}'),
-            const SizedBox(height: 16),
-            const Text('Category Breakdown:'),
-            ...analysis['categoryPercentages'].entries.map((entry) => 
-              Text('${entry.key}: ${entry.value.toStringAsFixed(1)}%'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
+    // TODO: Implement analytics view
   }
 }
 
 class AddExpenseDialog extends StatefulWidget {
-  const AddExpenseDialog({super.key});
-
   @override
-  State<AddExpenseDialog> createState() => _AddExpenseDialogState();
+  _AddExpenseDialogState createState() => _AddExpenseDialogState();
 }
 
 class _AddExpenseDialogState extends State<AddExpenseDialog> {
@@ -170,16 +136,9 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
   String _selectedCategory = 'Other';
 
   @override
-  void dispose() {
-    _descriptionController.dispose();
-    _amountController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add Expense'),
+      title: Text('Add Expense'),
       content: Form(
         key: _formKey,
         child: Column(
@@ -187,20 +146,20 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
           children: [
             TextFormField(
               controller: _descriptionController,
-              decoration: const InputDecoration(labelText: 'Description'),
+              decoration: InputDecoration(labelText: 'Description'),
               validator: (value) =>
                   value?.isEmpty ?? true ? 'Please enter a description' : null,
             ),
             TextFormField(
               controller: _amountController,
-              decoration: const InputDecoration(labelText: 'Amount'),
+              decoration: InputDecoration(labelText: 'Amount'),
               keyboardType: TextInputType.number,
               validator: (value) =>
                   value?.isEmpty ?? true ? 'Please enter an amount' : null,
             ),
             DropdownButtonFormField<String>(
               value: _selectedCategory,
-              items: const [
+              items: [
                 'Food & Dining',
                 'Transportation',
                 'Housing',
@@ -225,11 +184,11 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text('Cancel'),
         ),
         ElevatedButton(
           onPressed: _submit,
-          child: const Text('Add'),
+          child: Text('Add'),
         ),
       ],
     );
