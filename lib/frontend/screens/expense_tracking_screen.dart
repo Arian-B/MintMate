@@ -4,19 +4,21 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../backend/models/expense.dart';
 
 class ExpenseTrackingScreen extends StatefulWidget {
+  const ExpenseTrackingScreen({super.key});
+
   @override
   _ExpenseTrackingScreenState createState() => _ExpenseTrackingScreenState();
 }
 
 class _ExpenseTrackingScreenState extends State<ExpenseTrackingScreen> {
-  List<Expense> _expenses = [];
-  bool _isLoading = false;
+  final List<Expense> _expenses = [];
+  final bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('MintMate - Expense Tracker'),
+        title: const Text('MintMate - Expense Tracker'),
         actions: [
           IconButton(
             icon: const Icon(Icons.analytics),
@@ -25,7 +27,7 @@ class _ExpenseTrackingScreenState extends State<ExpenseTrackingScreen> {
         ],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
                 _buildExpenseChart(),
@@ -36,7 +38,7 @@ class _ExpenseTrackingScreenState extends State<ExpenseTrackingScreen> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addExpense,
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -44,7 +46,7 @@ class _ExpenseTrackingScreenState extends State<ExpenseTrackingScreen> {
   Widget _buildExpenseChart() {
     return Container(
       height: 200,
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       child: PieChart(
         PieChartData(
           sections: _getChartSections(),
@@ -82,7 +84,7 @@ class _ExpenseTrackingScreenState extends State<ExpenseTrackingScreen> {
             subtitle: Text(expense.category),
             trailing: Text(
               '\$${expense.amount.toStringAsFixed(2)}',
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.green,
               ),
@@ -123,6 +125,8 @@ class _ExpenseTrackingScreenState extends State<ExpenseTrackingScreen> {
 }
 
 class AddExpenseDialog extends StatefulWidget {
+  const AddExpenseDialog({super.key});
+
   @override
   _AddExpenseDialogState createState() => _AddExpenseDialogState();
 }
@@ -136,7 +140,7 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Add Expense'),
+      title: const Text('Add Expense'),
       content: Form(
         key: _formKey,
         child: Column(
@@ -144,13 +148,13 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
           children: [
             TextFormField(
               controller: _descriptionController,
-              decoration: InputDecoration(labelText: 'Description'),
+              decoration: const InputDecoration(labelText: 'Description'),
               validator: (value) =>
                   value?.isEmpty ?? true ? 'Please enter a description' : null,
             ),
             TextFormField(
               controller: _amountController,
-              decoration: InputDecoration(labelText: 'Amount'),
+              decoration: const InputDecoration(labelText: 'Amount'),
               keyboardType: TextInputType.number,
               validator: (value) =>
                   value?.isEmpty ?? true ? 'Please enter an amount' : null,
@@ -182,11 +186,11 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('Cancel'),
+          child: const Text('Cancel'),
         ),
         ElevatedButton(
           onPressed: _submit,
-          child: Text('Add'),
+          child: const Text('Add'),
         ),
       ],
     );

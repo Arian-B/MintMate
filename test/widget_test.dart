@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/main.dart';
+import 'package:mintmate/main.dart';
 
 void main() {
   testWidgets('Splash Screen navigates to Login Screen',
