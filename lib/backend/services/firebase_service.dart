@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/user.dart' as app;
 
 class FirebaseService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -15,10 +16,19 @@ class FirebaseService {
   static Future<UserCredential> signInWithEmailAndPassword(
       String email, String password) async {
     try {
-      return await _auth.signInWithEmailAndPassword(
+      final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      // Update last login timestamp
+      if (userCredential.user != null) {
+        await _firestore.collection('users').doc(userCredential.user!.uid).update({
+          'lastLogin': FieldValue.serverTimestamp(),
+        });
+      }
+
+      return userCredential;
     } catch (e) {
       throw Exception('Failed to sign in: ${e.toString()}');
     }
@@ -28,17 +38,21 @@ class FirebaseService {
   static Future<UserCredential> registerWithEmailAndPassword(
       String email, String password, String name) async {
     try {
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
       // Create user profile in Firestore
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
-        'name': name,
-        'email': email,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      final user = app.User(
+        id: userCredential.user!.uid,
+        email: email,
+        name: name,
+        createdAt: DateTime.now(),
+        lastLogin: DateTime.now(),
+      );
+
+      await _firestore.collection('users').doc(user.id).set(user.toFirestore());
 
       return userCredential;
     } catch (e) {

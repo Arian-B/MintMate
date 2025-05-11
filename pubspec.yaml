@@ -74,6 +74,13 @@ dependencies:
   
   # Testing
   mockito: ^5.4.2
+  
+  # Added from the code block
+  uuid: ^4.2.1
+
+  # Added from the code block
+  firebase_messaging: ^14.9.4
+  flutter_local_notifications: ^9.0.0
 
 dev_dependencies:
   flutter_test:
