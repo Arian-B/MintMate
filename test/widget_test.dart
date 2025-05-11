@@ -6,7 +6,7 @@ void main() {
   testWidgets('Splash Screen navigates to Login Screen',
       (WidgetTester tester) async {
     // Build the app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const MintMateApp());
 
     // Verify that the Splash Screen is shown.
     expect(find.text('MintMate'), findsOneWidget);
