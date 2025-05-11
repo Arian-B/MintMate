@@ -21,7 +21,7 @@ class _ExpenseTrackingScreenState extends State<ExpenseTrackingScreen> {
         title: Text('MintMate - Expense Tracker'),
         actions: [
           IconButton(
-            icon: Icon(Icons.analytics),
+            icon: const Icon(Icons.analytics),
             onPressed: _showAnalytics,
           ),
         ],
