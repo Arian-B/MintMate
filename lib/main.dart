@@ -1,25 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'frontend/screens/expense_tracking_screen.dart';
+import 'frontend/theme/app_theme.dart';
+import 'frontend/screens/dashboard_screen.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  runApp(const MyApp());
+void main() {
+  runApp(const MintMateApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MintMateApp extends StatelessWidget {
+  const MintMateApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'MintMate',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: ExpenseTrackingScreen(),
+      theme: AppTheme.lightTheme,
+      home: const DashboardScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
