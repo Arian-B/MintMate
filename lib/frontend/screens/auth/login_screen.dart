@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
+import '../../../backend/services/firebase_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -186,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     TextButton(
                       onPressed: () {
-                        // TODO: Navigate to Register Screen
+                        Navigator.pushNamed(context, '/register');
                       },
                       child: Text(
                         'Sign Up',
@@ -213,11 +214,10 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       try {
-        // TODO: Implement actual login logic
-        await Future.delayed(const Duration(seconds: 2)); // Simulated delay
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/dashboard');
-        }
+        await FirebaseService.signInWithEmailAndPassword(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

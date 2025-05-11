@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
+import '../../../backend/services/firebase_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -221,11 +222,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       try {
-        // TODO: Implement actual registration logic
-        await Future.delayed(const Duration(seconds: 2)); // Simulated delay
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/dashboard');
-        }
+        await FirebaseService.registerWithEmailAndPassword(
+          _emailController.text.trim(),
+          _passwordController.text,
+          _nameController.text.trim(),
+        );
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
