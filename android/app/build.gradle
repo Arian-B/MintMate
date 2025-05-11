@@ -1,0 +1,59 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+    
+    // Add the Google services Gradle plugin (for Firebase)
+    id 'com.google.gms.google-services'
+}
+
+android {
+    namespace = "com.example.alexa_dev_project"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8
+    }
+
+    defaultConfig {
+        applicationId = "com.example.alexa_dev_project"
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.debug
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}
+
+dependencies {
+    // Import the Firebase BoM (Bill of Materials)
+    implementation platform('com.google.firebase:firebase-bom:33.4.0')
+    implementation 'com.google.firebase:firebase-appcheck-playintegrity:16.0.0' // For Play Integrity API
+    implementation platform('com.google.firebase:firebase-bom:33.4.0') // BoM for Firebase
+
+    // Add the Firebase Analytics dependency
+    implementation 'com.google.firebase:firebase-analytics'
+
+    // Add any other Firebase products you plan to use (for example, Firebase Database)
+    implementation 'com.google.firebase:firebase-auth'          // Firebase Authentication
+    implementation 'com.google.firebase:firebase-database'      // Firebase Realtime Database
+
+    // (Optional) Add other Firebase services like Firestore, Cloud Storage, etc.
+}
+
+apply plugin: 'com.google.gms.google-services'  // Apply the Firebase plugin at the bottom
