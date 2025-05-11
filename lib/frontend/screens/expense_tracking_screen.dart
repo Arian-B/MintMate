@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../backend/models/expense.dart';
-import '../../backend/services/ai_service.dart';
 
 class ExpenseTrackingScreen extends StatefulWidget {
   @override
@@ -10,7 +9,6 @@ class ExpenseTrackingScreen extends StatefulWidget {
 }
 
 class _ExpenseTrackingScreenState extends State<ExpenseTrackingScreen> {
-  final AIService _aiService = AIService();
   List<Expense> _expenses = [];
   bool _isLoading = false;
 
