@@ -21,7 +21,7 @@ class _LoanEMISimulatorScreenState extends State<LoanEMISimulatorScreen> {
   double _totalPayment = 0;
   List<Map<String, dynamic>> _paymentSchedule = [];
   List<Map<String, dynamic>> _aiSuggestions = [];
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   @override
   void initState() {

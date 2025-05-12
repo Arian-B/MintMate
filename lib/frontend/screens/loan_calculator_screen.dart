@@ -11,9 +11,9 @@ class LoanCalculatorScreen extends StatefulWidget {
 
 class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
   bool _isLoading = false;
-  double _loanAmount = 0;
-  double _interestRate = 0;
-  int _loanTerm = 0;
+  final double _loanAmount = 0;
+  final double _interestRate = 0;
+  final int _loanTerm = 0;
   double _emi = 0;
   List<Map<String, dynamic>> _loanSuggestions = [];
 

@@ -17,7 +17,7 @@ class _ExpenseCalculatorScreenState extends State<ExpenseCalculatorScreen> {
   final AIService _aiService = AIService();
   final ExpenseService _expenseService = ExpenseService();
   List<Expense> _recentExpenses = [];
-  Map<String, double> _categoryTotals = {};
+  final Map<String, double> _categoryTotals = {};
   bool _isLoading = false;
 
   @override

@@ -4,6 +4,7 @@ import 'backend/services/user_service.dart';
 import 'backend/services/account_service.dart';
 import 'backend/services/transaction_service.dart';
 import 'backend/services/goal_service.dart';
+import 'backend/services/spending_service.dart';
 
 final firestore = FirebaseFirestore.instance;
 
@@ -12,4 +13,5 @@ final appProviders = [
   Provider<AccountService>(create: (_) => AccountService(firestore)),
   Provider<TransactionService>(create: (_) => TransactionService(firestore)),
   Provider<GoalService>(create: (_) => GoalService(firestore)),
+  Provider<SpendingService>(create: (_) => SpendingService()),
 ]; 

@@ -7,9 +7,107 @@ import 'expense_calculator_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:mintmate/backend/services/notification_service.dart';
 import 'reminders_screen.dart';
+import 'package:mintmate/backend/services/ai_service.dart';
+import 'package:mintmate/backend/services/auth_service.dart';
+import 'package:mintmate/backend/services/net_worth_service.dart';
+import 'package:intl/intl.dart';
+import 'package:mintmate/backend/services/spending_service.dart';
+import 'package:mintmate/frontend/widgets/spending_chart.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  final AIService _aiService = AIService();
+  final NetWorthService _netWorthService = NetWorthService();
+  final SpendingService _spendingService = SpendingService();
+  String _dailyTip = '';
+  bool _isLoadingTip = true;
+  Map<String, dynamic> _netWorth = {};
+  bool _isLoadingNetWorth = true;
+  List<Map<String, dynamic>> _spendingData = [];
+  bool _isLoadingSpending = true;
+  String _selectedPeriod = 'week';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDailyTip();
+    _loadNetWorth();
+    _loadSpendingData();
+  }
+
+  Future<void> _loadDailyTip() async {
+    setState(() => _isLoadingTip = true);
+    try {
+      final userId = context.read<AuthService>().currentUser?.uid;
+      if (userId != null) {
+        final tip = await _aiService.generateDailyTip(userId);
+        setState(() {
+          _dailyTip = tip;
+          _isLoadingTip = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _dailyTip = 'Unable to load daily tip. Please try again later.';
+        _isLoadingTip = false;
+      });
+    }
+  }
+
+  Future<void> _loadNetWorth() async {
+    setState(() => _isLoadingNetWorth = true);
+    try {
+      final userId = context.read<AuthService>().currentUser?.uid;
+      if (userId != null) {
+        // Calculate initial net worth
+        await _netWorthService.calculateNetWorth(userId);
+        
+        // Watch for changes
+        _netWorthService.watchNetWorth(userId).listen((netWorth) {
+          setState(() {
+            _netWorth = netWorth;
+            _isLoadingNetWorth = false;
+          });
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingNetWorth = false;
+      });
+    }
+  }
+
+  Future<void> _loadSpendingData() async {
+    setState(() {
+      _isLoadingSpending = true;
+    });
+
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId != null) {
+        final data = await _spendingService.getSpendingData(
+          userId,
+          period: _selectedPeriod,
+        );
+        setState(() {
+          _spendingData = data;
+          _isLoadingSpending = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingSpending = false;
+      });
+      // Handle error
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +130,14 @@ class DashboardScreen extends StatelessWidget {
                 _buildMateSays(context),
                 const SizedBox(height: 24),
                 _buildQuickActions(context),
+                const SizedBox(height: 16),
+                _buildPeriodSelector(),
+                const SizedBox(height: 16),
+                SpendingChart(
+                  spendingData: _spendingData,
+                  period: _selectedPeriod,
+                  isLoading: _isLoadingSpending,
+                ),
               ],
             ),
           ),
@@ -84,6 +190,8 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildNetWorthCard(BuildContext context) {
+    final currencyFormat = NumberFormat.currency(symbol: '₹');
+    
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -94,55 +202,150 @@ class DashboardScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Net Worth',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '₹25,000',
-              style: GoogleFonts.poppins(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildBalanceItem('Cash', '₹15,000'),
-                _buildBalanceItem('Crypto', '₹5,000'),
-                _buildBalanceItem('Stocks', '₹5,000'),
+                Text(
+                  'Net Worth',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: _loadNetWorth,
+                ),
               ],
             ),
+            const SizedBox(height: 8),
+            _isLoadingNetWorth
+                ? const Center(child: CircularProgressIndicator())
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        currencyFormat.format(_netWorth['netWorth'] ?? 0),
+                        style: GoogleFonts.poppins(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (_netWorth['netWorthChange'] != null) ...[
+                        Row(
+                          children: [
+                            Icon(
+                              (_netWorth['netWorthChange']['isPositive'] as bool)
+                                  ? Icons.arrow_upward
+                                  : Icons.arrow_downward,
+                              color: (_netWorth['netWorthChange']['isPositive'] as bool)
+                                  ? Colors.green
+                                  : Colors.red,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${_netWorth['netWorthChange']['isPositive'] ? '+' : ''}${currencyFormat.format(_netWorth['netWorthChange']['amount'])} (${_netWorth['netWorthChange']['percentage'].toStringAsFixed(1)}%)',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: (_netWorth['netWorthChange']['isPositive'] as bool)
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      _buildNetWorthBreakdown(),
+                    ],
+                  ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBalanceItem(String label, String amount) {
+  Widget _buildNetWorthBreakdown() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          'Breakdown',
           style: GoogleFonts.poppins(
             fontSize: 14,
-            color: Colors.grey[600],
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          amount,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
         ),
+        const SizedBox(height: 8),
+        _buildBreakdownItem(
+          'Assets',
+          _netWorth['totalAssets'] ?? 0,
+          _netWorth['assetsByType'] ?? {},
+        ),
+        const SizedBox(height: 8),
+        _buildBreakdownItem(
+          'Liabilities',
+          _netWorth['totalLiabilities'] ?? 0,
+          _netWorth['liabilitiesByType'] ?? {},
+          isLiability: true,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBreakdownItem(String title, double total, Map<String, double> items, {bool isLiability = false}) {
+    final currencyFormat = NumberFormat.currency(symbol: '₹');
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              currencyFormat.format(total),
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: isLiability ? Colors.red : Colors.green,
+              ),
+            ),
+          ],
+        ),
+        if (items.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          ...items.entries.map((entry) => Padding(
+            padding: const EdgeInsets.only(left: 8.0, top: 2.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  entry.key,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                Text(
+                  currencyFormat.format(entry.value),
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: isLiability ? Colors.red : Colors.green,
+                  ),
+                ),
+              ],
+            ),
+          )),
+        ],
       ],
     );
   }
@@ -256,7 +459,7 @@ class DashboardScreen extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.lightbulb_outline, color: Colors.amber),
+                Icon(Icons.lightbulb_outline, color: Theme.of(context).primaryColor),
                 const SizedBox(width: 8),
                 Text(
                   'Mate Says',
@@ -267,12 +470,23 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              'Consider setting up automatic transfers to your savings account right after you receive your paycheck. This way, you\'ll save before you spend!',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Colors.grey[800],
+            const SizedBox(height: 16),
+            _isLoadingTip
+                ? const Center(child: CircularProgressIndicator())
+                : Text(
+                    _dailyTip,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _loadDailyTip,
+                icon: const Icon(Icons.refresh),
+                label: const Text('New Tip'),
               ),
             ),
           ],
@@ -377,6 +591,46 @@ class DashboardScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPeriodSelector() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Spending Analytics',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        DropdownButton<String>(
+          value: _selectedPeriod,
+          items: const [
+            DropdownMenuItem(
+              value: 'week',
+              child: Text('This Week'),
+            ),
+            DropdownMenuItem(
+              value: 'month',
+              child: Text('This Month'),
+            ),
+            DropdownMenuItem(
+              value: 'year',
+              child: Text('This Year'),
+            ),
+          ],
+          onChanged: (value) {
+            if (value != null) {
+              setState(() {
+                _selectedPeriod = value;
+              });
+              _loadSpendingData();
+            }
+          },
+        ),
+      ],
     );
   }
 } 

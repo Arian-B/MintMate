@@ -11,7 +11,7 @@ class MicroInvestmentScreen extends StatefulWidget {
 class _MicroInvestmentScreenState extends State<MicroInvestmentScreen> {
   bool _isLoading = false;
   List<Map<String, dynamic>> _investmentOptions = [];
-  String _riskProfile = 'Moderate';
+  final String _riskProfile = 'Moderate';
 
   @override
   void initState() {

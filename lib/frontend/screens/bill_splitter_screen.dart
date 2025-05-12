@@ -9,16 +9,18 @@ class BillSplitterScreen extends StatefulWidget {
   const BillSplitterScreen({super.key});
 
   @override
-  _BillSplitterScreenState createState() => _BillSplitterScreenState();
+  State<BillSplitterScreen> createState() => _BillSplitterScreenState();
 }
 
 class _BillSplitterScreenState extends State<BillSplitterScreen> {
-  final GroupExpenseService _groupExpenseService = GroupExpenseService();
-  bool _isLoading = false;
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _amountController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  String? _selectedGroupId;
+  bool _isLoading = true;
   List<GroupExpense> _expenses = [];
-  Map<String, Map<String, double>> _settlements = {};
-  final List<String> _groups = ['Group 1', 'Group 2', 'Group 3'];
-  String _selectedGroup = 'Group 1';
+  List<Map<String, dynamic>> _settlements = [];
 
   @override
   void initState() {
@@ -26,17 +28,26 @@ class _BillSplitterScreenState extends State<BillSplitterScreen> {
     _loadData();
   }
 
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _amountController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final userId = context.read<AuthService>().currentUser?.uid;
-      if (userId != null) {
-        _groupExpenseService.getExpensesForGroup(_selectedGroup).listen((expenses) {
-          setState(() {
-            _expenses = expenses;
-          });
-        });
-        _settlements = await _groupExpenseService.calculateSettlements(_selectedGroup);
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final groupExpenseService = Provider.of<GroupExpenseService>(context, listen: false);
+      
+      // Load user's groups
+      final groups = await groupExpenseService.getUserGroups(authService.currentUser!.uid);
+      
+      if (groups.isNotEmpty) {
+        _selectedGroupId = groups.first.id;
+        await _loadExpenses();
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -47,331 +58,130 @@ class _BillSplitterScreenState extends State<BillSplitterScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('MateSplit'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.group_add),
-            onPressed: _showCreateGroupDialog,
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildGroupSelector(),
-                      const SizedBox(height: 24),
-                      _buildExpenseList(),
-                      const SizedBox(height: 24),
-                      _buildSettlements(),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddExpenseDialog,
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
+  Future<void> _loadExpenses() async {
+    if (_selectedGroupId == null) return;
 
-  Widget _buildGroupSelector() {
-    return DropdownButton<String>(
-      value: _selectedGroup,
-      items: _groups.map((String group) {
-        return DropdownMenuItem<String>(
-          value: group,
-          child: Text(group),
-        );
-      }).toList(),
-      onChanged: (String? newValue) {
-        if (newValue != null) {
-          setState(() {
-            _selectedGroup = newValue;
-          });
-          _loadData();
-        }
-      },
-    );
-  }
-
-  Widget _buildExpenseList() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Expenses',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _expenses.length,
-          itemBuilder: (context, index) {
-            final expense = _expenses[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                title: Text(expense.description),
-                subtitle: Text('Paid by: ${expense.paidBy}'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '₹${expense.amount.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.info_outline, color: Colors.blue),
-                      onPressed: () => _showSplits(expense),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.blue),
-                      onPressed: () => _editExpense(expense),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _deleteExpense(expense),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSettlements() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Settlements',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _settlements.length,
-          itemBuilder: (context, index) {
-            final debtor = _settlements.keys.elementAt(index);
-            final creditor = _settlements[debtor]!.keys.first;
-            final amount = _settlements[debtor]![creditor]!;
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                title: Text('$debtor owes $creditor'),
-                trailing: Text(
-                  '₹${amount.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Future<void> _showAddExpenseDialog() async {
-    final descriptionController = TextEditingController();
-    final amountController = TextEditingController();
-    final List<String> friends = ['John', 'Sarah', 'Mike', 'Emma'];
-    List<String> selectedFriends = [];
-
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Expense'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
-              ),
-              TextField(
-                controller: amountController,
-                decoration: const InputDecoration(labelText: 'Amount'),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              const Text('Split between:'),
-              ...friends.map((friend) => CheckboxListTile(
-                    title: Text(friend),
-                    value: selectedFriends.contains(friend),
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          selectedFriends.add(friend);
-                        } else {
-                          selectedFriends.remove(friend);
-                        }
-                      });
-                    },
-                  )),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final description = descriptionController.text.trim();
-              final amount = double.tryParse(amountController.text) ?? 0.0;
-              if (description.isNotEmpty && amount > 0) {
-                Navigator.pop(context, {
-                  'description': description,
-                  'amount': amount,
-                  'participants': selectedFriends,
-                });
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-
-    if (result != null) {
-      try {
-        final userId = context.read<AuthService>().currentUser?.uid;
-        if (userId != null) {
-          final expense = GroupExpense(
-            id: '',
-            groupId: 'group1',
-            description: result['description'],
-            amount: result['amount'],
-            paidBy: userId,
-            participants: [userId, ...result['participants']],
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          );
-          await _groupExpenseService.createExpense(expense);
-        }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error adding expense: $e')),
-        );
-      }
+    try {
+      final groupExpenseService = Provider.of<GroupExpenseService>(context, listen: false);
+      final expenses = await groupExpenseService.getGroupExpenses(_selectedGroupId!);
+      final settlements = await groupExpenseService.calculateSettlements(_selectedGroupId!);
+      
+      setState(() {
+        _expenses = expenses;
+        _settlements = settlements;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading expenses: $e')),
+      );
     }
   }
 
-  Future<void> _deleteExpense(GroupExpense expense) async {
+  Future<void> _addExpense() async {
+    if (!_formKey.currentState!.validate()) return;
+
     try {
-      await _groupExpenseService.deleteExpense(expense.id);
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final groupExpenseService = Provider.of<GroupExpenseService>(context, listen: false);
+      
+      // Get the current group to get its members
+      final groups = await groupExpenseService.getUserGroups(authService.currentUser!.uid);
+      final currentGroup = groups.firstWhere((g) => g.id == _selectedGroupId);
+      
+      if (currentGroup.members == null || currentGroup.members!.isEmpty) {
+        throw Exception('No members found in the group');
+      }
+
+      await groupExpenseService.addExpense(
+        groupId: _selectedGroupId!,
+        paidBy: authService.currentUser!.uid,
+        amount: double.parse(_amountController.text),
+        description: _descriptionController.text,
+        participants: currentGroup.members!,
+        context: {
+          'title': _titleController.text,
+          'description': _descriptionController.text,
+        },
+      );
+      
+      await _loadExpenses();
+      
+      _titleController.clear();
+      _amountController.clear();
+      _descriptionController.clear();
+      
+      if (mounted) {
+        Navigator.pop(context);
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error deleting expense: $e')),
+        SnackBar(content: Text('Error adding expense: $e')),
       );
     }
   }
 
   Future<void> _editExpense(GroupExpense expense) async {
-    final descriptionController = TextEditingController(text: expense.description);
-    final amountController = TextEditingController(text: expense.amount.toString());
-    final List<String> friends = ['John', 'Sarah', 'Mike', 'Emma'];
-    List<String> selectedFriends = List.from(expense.participants);
+    _titleController.text = expense.name ?? expense.description;
+    _amountController.text = expense.amount.toString();
+    _descriptionController.text = expense.description;
 
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Edit Expense'),
-        content: SingleChildScrollView(
+        content: Form(
+          key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(labelText: 'Title'),
+                validator: (value) => value?.isEmpty ?? true ? 'Required' : null,
               ),
-              TextField(
-                controller: amountController,
+              TextFormField(
+                controller: _amountController,
                 decoration: const InputDecoration(labelText: 'Amount'),
                 keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value?.isEmpty ?? true) return 'Required';
+                  if (double.tryParse(value!) == null) return 'Invalid amount';
+                  return null;
+                },
               ),
-              const SizedBox(height: 16),
-              const Text('Split between:'),
-              ...friends.map((friend) => CheckboxListTile(
-                    title: Text(friend),
-                    value: selectedFriends.contains(friend),
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          selectedFriends.add(friend);
-                        } else {
-                          selectedFriends.remove(friend);
-                        }
-                      });
-                    },
-                  )),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(labelText: 'Description'),
+                maxLines: 3,
+              ),
             ],
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              final description = descriptionController.text.trim();
-              final amount = double.tryParse(amountController.text) ?? 0.0;
-              if (description.isNotEmpty && amount > 0) {
-                Navigator.pop(context, {
-                  'description': description,
-                  'amount': amount,
-                  'participants': selectedFriends,
-                });
-              }
-            },
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
             child: const Text('Save'),
           ),
         ],
       ),
     );
 
-    if (result != null) {
+    if (result == true) {
       try {
+        final groupExpenseService = Provider.of<GroupExpenseService>(context, listen: false);
         final updatedExpense = expense.copyWith(
-          description: result['description'],
-          amount: result['amount'],
-          participants: result['participants'],
+          name: _titleController.text,
+          amount: double.parse(_amountController.text),
+          description: _descriptionController.text,
           updatedAt: DateTime.now(),
         );
-        await _groupExpenseService.updateExpense(updatedExpense);
+        
+        await groupExpenseService.updateExpense(updatedExpense);
+        await _loadExpenses();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error updating expense: $e')),
@@ -380,69 +190,259 @@ class _BillSplitterScreenState extends State<BillSplitterScreen> {
     }
   }
 
-  Future<void> _showSplits(GroupExpense expense) async {
-    final splits = _groupExpenseService.calculateSplits(expense);
-    await showDialog<void>(
+  Future<void> _deleteExpense(GroupExpense expense) async {
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(expense.description),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Total Amount: ₹${expense.amount.toStringAsFixed(2)}'),
-            const SizedBox(height: 16),
-            const Text('Splits:'),
-            ...splits.entries.map((entry) => Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text('${entry.key}: ₹${entry.value.toStringAsFixed(2)}'),
-                )),
-          ],
-        ),
+        title: const Text('Delete Expense'),
+        content: const Text('Are you sure you want to delete this expense?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
           ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        final groupExpenseService = Provider.of<GroupExpenseService>(context, listen: false);
+        await groupExpenseService.deleteExpense(expense.id);
+        await _loadExpenses();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting expense: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Bill Splitter',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => _showAddExpenseDialog(),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          _buildGroupSelector(),
+          Expanded(
+            child: _expenses.isEmpty
+                ? Center(
+                    child: Text(
+                      'No expenses yet',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: _expenses.length,
+                    itemBuilder: (context, index) {
+                      final expense = _expenses[index];
+                      return _buildExpenseCard(expense);
+                    },
+                  ),
+          ),
+          if (_settlements.isNotEmpty) _buildSettlementsSection(),
         ],
       ),
     );
   }
 
-  Future<void> _showCreateGroupDialog() async {
-    final nameController = TextEditingController();
-    final result = await showDialog<String>(
+  Widget _buildGroupSelector() {
+    return Consumer<GroupExpenseService>(
+      builder: (context, service, child) {
+        return FutureBuilder<List<GroupExpense>>(
+          future: service.getUserGroups(Provider.of<AuthService>(context, listen: false).currentUser!.uid),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final groups = snapshot.data!;
+            return Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Select Group',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: _selectedGroupId,
+                    items: groups.map((group) {
+                      return DropdownMenuItem(
+                        value: group.id,
+                        child: Text(group.name ?? group.description),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() => _selectedGroupId = value);
+                      _loadExpenses();
+                    },
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildExpenseCard(GroupExpense expense) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: ListTile(
+        title: Text(
+          expense.name ?? expense.description,
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('\$${expense.amount.toStringAsFixed(2)}'),
+            if (expense.description.isNotEmpty)
+              Text(
+                expense.description,
+                style: const TextStyle(fontSize: 12),
+              ),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () => _editExpense(expense),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () => _deleteExpense(expense),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettlementsSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Settlements',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ..._settlements.map((settlement) {
+            return ListTile(
+              title: Text(
+                '${settlement['from']} → ${settlement['to']}',
+                style: GoogleFonts.poppins(),
+              ),
+              subtitle: Text(
+                '\$${settlement['amount'].toStringAsFixed(2)}',
+                style: const TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  void _showAddExpenseDialog() {
+    showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Create New Group'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(labelText: 'Group Name'),
+        title: Text(
+          'Add Expense',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(labelText: 'Title'),
+                validator: (value) => value?.isEmpty ?? true ? 'Required' : null,
+              ),
+              TextFormField(
+                controller: _amountController,
+                decoration: const InputDecoration(labelText: 'Amount'),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value?.isEmpty ?? true) return 'Required';
+                  if (double.tryParse(value!) == null) return 'Invalid amount';
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(labelText: 'Description'),
+                maxLines: 3,
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              final name = nameController.text.trim();
-              if (name.isNotEmpty) {
-                Navigator.pop(context, name);
-              }
-            },
-            child: const Text('Create'),
+          TextButton(
+            onPressed: _addExpense,
+            child: const Text('Add'),
           ),
         ],
       ),
     );
-
-    if (result != null) {
-      setState(() {
-        _groups.add(result);
-        _selectedGroup = result;
-      });
-      _loadData();
-    }
   }
 } 

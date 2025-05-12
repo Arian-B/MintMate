@@ -197,7 +197,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: Text(
+                      child: const Text(
                         'Sign In',
                         style: TextStyle(
                           color: AppTheme.primaryColor,
