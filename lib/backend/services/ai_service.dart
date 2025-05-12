@@ -1360,4 +1360,9 @@ class AIService extends BaseService {
       throw Exception('Error generating payment reminders: $e');
     }
   }
+
+  Future<void> generateInsights() async {
+    // TODO: Implement AI insights generation
+    await Future.delayed(const Duration(milliseconds: 500)); // Placeholder
+  }
 } 

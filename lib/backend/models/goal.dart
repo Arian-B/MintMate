@@ -22,126 +22,130 @@ class Goal {
   final String userId;
   final String title;
   final String description;
-  final GoalType type;
-  final GoalStatus status;
+  final String category;
   final double targetAmount;
   final double currentAmount;
-  final String currency;
-  final DateTime startDate;
   final DateTime targetDate;
-  final DateTime? completedDate;
-  final List<String> relatedAccountIds;
-  final Map<String, dynamic> metadata;
   final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? lastUpdated;
+  final GoalStatus status;
 
   Goal({
     required this.id,
     required this.userId,
     required this.title,
     required this.description,
-    required this.type,
-    required this.status,
+    required this.category,
     required this.targetAmount,
     required this.currentAmount,
-    required this.currency,
-    required this.startDate,
     required this.targetDate,
-    this.completedDate,
-    required this.relatedAccountIds,
-    required this.metadata,
     required this.createdAt,
-    required this.updatedAt,
+    this.lastUpdated,
+    this.status = GoalStatus.notStarted,
   });
-
-  factory Goal.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return Goal(
-      id: doc.id,
-      userId: data['userId'] ?? '',
-      title: data['title'] ?? '',
-      description: data['description'] ?? '',
-      type: GoalType.values.firstWhere(
-        (e) => e.toString() == 'GoalType.${data['type']}',
-        orElse: () => GoalType.other,
-      ),
-      status: GoalStatus.values.firstWhere(
-        (e) => e.toString() == 'GoalStatus.${data['status']}',
-        orElse: () => GoalStatus.notStarted,
-      ),
-      targetAmount: (data['targetAmount'] ?? 0.0).toDouble(),
-      currentAmount: (data['currentAmount'] ?? 0.0).toDouble(),
-      currency: data['currency'] ?? 'INR',
-      startDate: (data['startDate'] as Timestamp).toDate(),
-      targetDate: (data['targetDate'] as Timestamp).toDate(),
-      completedDate: data['completedDate'] != null
-          ? (data['completedDate'] as Timestamp).toDate()
-          : null,
-      relatedAccountIds: List<String>.from(data['relatedAccountIds'] ?? []),
-      metadata: data['metadata'] ?? {},
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
-    );
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'userId': userId,
-      'title': title,
-      'description': description,
-      'type': type.toString().split('.').last,
-      'status': status.toString().split('.').last,
-      'targetAmount': targetAmount,
-      'currentAmount': currentAmount,
-      'currency': currency,
-      'startDate': Timestamp.fromDate(startDate),
-      'targetDate': Timestamp.fromDate(targetDate),
-      'completedDate': completedDate != null
-          ? Timestamp.fromDate(completedDate!)
-          : null,
-      'relatedAccountIds': relatedAccountIds,
-      'metadata': metadata,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
-    };
-  }
 
   Goal copyWith({
     String? id,
     String? userId,
     String? title,
     String? description,
-    GoalType? type,
-    GoalStatus? status,
+    String? category,
     double? targetAmount,
     double? currentAmount,
-    String? currency,
-    DateTime? startDate,
     DateTime? targetDate,
-    DateTime? completedDate,
-    List<String>? relatedAccountIds,
-    Map<String, dynamic>? metadata,
     DateTime? createdAt,
-    DateTime? updatedAt,
+    DateTime? lastUpdated,
+    GoalStatus? status,
   }) {
     return Goal(
       id: id ?? this.id,
       userId: userId ?? this.userId,
       title: title ?? this.title,
       description: description ?? this.description,
-      type: type ?? this.type,
-      status: status ?? this.status,
+      category: category ?? this.category,
       targetAmount: targetAmount ?? this.targetAmount,
       currentAmount: currentAmount ?? this.currentAmount,
-      currency: currency ?? this.currency,
-      startDate: startDate ?? this.startDate,
       targetDate: targetDate ?? this.targetDate,
-      completedDate: completedDate ?? this.completedDate,
-      relatedAccountIds: relatedAccountIds ?? this.relatedAccountIds,
-      metadata: metadata ?? this.metadata,
       createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+      status: status ?? this.status,
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'userId': userId,
+      'title': title,
+      'description': description,
+      'category': category,
+      'targetAmount': targetAmount,
+      'currentAmount': currentAmount,
+      'targetDate': Timestamp.fromDate(targetDate),
+      'createdAt': Timestamp.fromDate(createdAt),
+      'lastUpdated': lastUpdated != null ? Timestamp.fromDate(lastUpdated!) : null,
+      'status': status.toString().split('.').last,
+    };
+  }
+
+  factory Goal.fromMap(Map<String, dynamic> map, String id) {
+    return Goal(
+      id: id,
+      userId: map['userId'] as String,
+      title: map['title'] as String,
+      description: map['description'] as String,
+      category: map['category'] as String,
+      targetAmount: (map['targetAmount'] as num).toDouble(),
+      currentAmount: (map['currentAmount'] as num).toDouble(),
+      targetDate: (map['targetDate'] as Timestamp).toDate(),
+      createdAt: (map['createdAt'] as Timestamp).toDate(),
+      lastUpdated: map['lastUpdated'] != null
+          ? (map['lastUpdated'] as Timestamp).toDate()
+          : null,
+      status: GoalStatus.values.firstWhere(
+        (e) => e.toString().split('.').last == map['status'],
+        orElse: () => GoalStatus.notStarted,
+      ),
+    );
+  }
+
+  @override
+  String toString() {
+    return 'Goal(id: $id, userId: $userId, title: $title, description: $description, '
+        'category: $category, targetAmount: $targetAmount, currentAmount: $currentAmount, '
+        'targetDate: $targetDate, createdAt: $createdAt, lastUpdated: $lastUpdated, '
+        'status: $status)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Goal &&
+        other.id == id &&
+        other.userId == userId &&
+        other.title == title &&
+        other.description == description &&
+        other.category == category &&
+        other.targetAmount == targetAmount &&
+        other.currentAmount == currentAmount &&
+        other.targetDate == targetDate &&
+        other.createdAt == createdAt &&
+        other.lastUpdated == lastUpdated &&
+        other.status == status;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^
+        userId.hashCode ^
+        title.hashCode ^
+        description.hashCode ^
+        category.hashCode ^
+        targetAmount.hashCode ^
+        currentAmount.hashCode ^
+        targetDate.hashCode ^
+        createdAt.hashCode ^
+        lastUpdated.hashCode ^
+        status.hashCode;
   }
 
   double get progressPercentage => (currentAmount / targetAmount) * 100;

@@ -625,4 +625,9 @@ class SecurityService extends BaseService {
       throw Exception('Error getting security status: $e');
     }
   }
+
+  Future<void> checkSecurityStatus() async {
+    // TODO: Implement security status check
+    await Future.delayed(const Duration(milliseconds: 500)); // Placeholder
+  }
 } 
