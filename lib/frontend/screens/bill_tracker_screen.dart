@@ -311,14 +311,15 @@ class _BillTrackerScreenState extends State<BillTrackerScreen> {
           child: BarChart(
             BarChartData(
               alignment: BarChartAlignment.spaceAround,
-              maxY: monthlyTotals.values.fold(0.0, (max, amount) => amount > max ? amount : max).toDouble(),
+              maxY: monthlyTotals.values.fold(0.0, (max, amount) => amount > max ? amount : max) * 1.2,
               barGroups: spots.map((spot) => BarChartGroupData(
                 x: spot.x.toInt(),
                 barRods: [
                   BarChartRodData(
-                    toY: (spot.y ?? 0).toDouble(),
-                    color: Colors.blue,
+                    toY: monthlyTotals[sortedMonths[spot.x.toInt()]] ?? 0,
+                    color: Colors.blue.withOpacity(0.8),
                     width: 20,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                   ),
                 ],
               )).toList(),
@@ -329,14 +330,34 @@ class _BillTrackerScreenState extends State<BillTrackerScreen> {
                     showTitles: true,
                     getTitlesWidget: (value, meta) {
                       if (value.toInt() >= sortedMonths.length) return const Text('');
-                      return Text(sortedMonths[value.toInt()].substring(5));
+                      final month = sortedMonths[value.toInt()].substring(5);
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          month,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      );
                     },
+                    reservedSize: 30,
                   ),
                 ),
-                leftTitles: const AxisTitles(
+                leftTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
                     reservedSize: 40,
+                    getTitlesWidget: (value, meta) {
+                      return Text(
+                        '₹${value.toInt()}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      );
+                    },
                   ),
                 ),
                 topTitles: const AxisTitles(
@@ -344,6 +365,24 @@ class _BillTrackerScreenState extends State<BillTrackerScreen> {
                 ),
                 rightTitles: const AxisTitles(
                   sideTitles: SideTitles(showTitles: false),
+                ),
+              ),
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: 1000,
+                getDrawingHorizontalLine: (value) {
+                  return FlLine(
+                    color: Colors.grey[300] ?? Colors.grey,
+                    strokeWidth: 1,
+                  );
+                },
+              ),
+              borderData: FlBorderData(
+                show: true,
+                border: const Border(
+                  bottom: const BorderSide(color: Color(0xFFE0E0E0)),
+                  left: const BorderSide(color: Color(0xFFE0E0E0)),
                 ),
               ),
             ),
@@ -526,7 +565,10 @@ class _BillTrackerScreenState extends State<BillTrackerScreen> {
                 ),
                 const SizedBox(width: 8),
                 IconButton(
-                  icon: const Icon(Icons.check_circle_outline),
+                  icon: Icon(
+                    bill.isPaid ? Icons.check_circle : Icons.check_circle_outline,
+                    color: bill.isPaid ? Colors.green : Colors.grey,
+                  ),
                   onPressed: () => _billService.markBillAsPaid(bill.id),
                 ),
               ],
@@ -556,8 +598,14 @@ class _BillTrackerScreenState extends State<BillTrackerScreen> {
                     Icon(
                       suggestion['type'] == 'consolidation'
                           ? Icons.merge_type
-                          : Icons.warning,
-                      color: Colors.orange,
+                          : suggestion['type'] == 'unused'
+                              ? Icons.warning
+                              : Icons.lightbulb_outline,
+                      color: suggestion['type'] == 'consolidation'
+                          ? Colors.blue
+                          : suggestion['type'] == 'unused'
+                              ? Colors.orange
+                              : Colors.green,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -575,6 +623,31 @@ class _BillTrackerScreenState extends State<BillTrackerScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Total: ₹${suggestion['totalAmount'].toStringAsFixed(2)}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Subscriptions: ${suggestion['subscriptions'].join(', ')}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ] else if (suggestion['type'] == 'unused') ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Amount: ₹${suggestion['amount'].toStringAsFixed(2)}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Last used: ${suggestion['lastUsed'].toString().split(' ')[0]}',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       color: Colors.grey[600],

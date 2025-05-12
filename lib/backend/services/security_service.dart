@@ -598,7 +598,6 @@ class SecurityService extends BaseService {
   }
 
   // Enhanced security status with new features
-  @override
   Future<Map<String, dynamic>> getSecurityStatus(String userId) async {
     try {
       final settings = await FirebaseFirestore.instance
