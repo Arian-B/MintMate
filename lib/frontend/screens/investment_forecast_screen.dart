@@ -226,7 +226,7 @@ class _InvestmentForecastScreenState extends State<InvestmentForecastScreen> {
               height: 300,
               child: LineChart(
                 LineChartData(
-                  gridData: FlGridData(show: true),
+                  gridData: const FlGridData(show: true),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
@@ -252,10 +252,10 @@ class _InvestmentForecastScreenState extends State<InvestmentForecastScreen> {
                         },
                       ),
                     ),
-                    rightTitles: AxisTitles(
+                    rightTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false),
                     ),
-                    topTitles: AxisTitles(
+                    topTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
@@ -267,7 +267,7 @@ class _InvestmentForecastScreenState extends State<InvestmentForecastScreen> {
                       color: Colors.blue,
                       barWidth: 3,
                       isStrokeCapRound: true,
-                      dotData: FlDotData(show: false),
+                      dotData: const FlDotData(show: false),
                       belowBarData: BarAreaData(
                         show: true,
                         color: Colors.blue.withOpacity(0.1),

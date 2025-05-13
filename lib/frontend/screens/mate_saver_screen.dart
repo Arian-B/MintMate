@@ -31,7 +31,7 @@ class _MateSaverScreenState extends State<MateSaverScreen> {
     setState(() => _isLoading = true);
     try {
       // Get user's transactions and balances
-      final userId = 'current_user_id'; // Replace with actual user ID
+      const userId = 'current_user_id'; // Replace with actual user ID
       final transactions = await _spendingService.getTransactions(userId);
       final rawBalances = await _accountService.getAggregatedBalances(userId);
       final balances = Map<String, double>.from(rawBalances);

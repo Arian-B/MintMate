@@ -381,8 +381,8 @@ class _BillTrackerScreenState extends State<BillTrackerScreen> {
               borderData: FlBorderData(
                 show: true,
                 border: const Border(
-                  bottom: const BorderSide(color: Color(0xFFE0E0E0)),
-                  left: const BorderSide(color: Color(0xFFE0E0E0)),
+                  bottom: BorderSide(color: Color(0xFFE0E0E0)),
+                  left: BorderSide(color: Color(0xFFE0E0E0)),
                 ),
               ),
             ),

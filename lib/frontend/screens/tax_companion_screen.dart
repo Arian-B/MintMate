@@ -56,7 +56,7 @@ class _TaxCompanionScreenState extends State<TaxCompanionScreen> {
     setState(() => _isLoading = true);
     try {
       // Get user's financial data
-      final userId = 'current_user_id'; // Replace with actual user ID
+      const userId = 'current_user_id'; // Replace with actual user ID
       final financialData = await _accountService.getAggregatedBalances(userId);
       
       // Calculate tax estimate
